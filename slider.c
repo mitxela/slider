@@ -5,6 +5,13 @@
 // STEP C1
 // ADC  D4 (A7)
 
+#define dir_left()   GPIOC->OUTDR |=  (1<<0)
+#define dir_right()  GPIOC->OUTDR &= ~(1<<0)
+#define driver_on()  GPIOC->OUTDR &= ~(1<<7)
+#define driver_off() GPIOC->OUTDR |=  (1<<7)
+#define step_high()  GPIOC->OUTDR |=  (1<<1)
+#define step_low()   GPIOC->OUTDR &= ~(1<<1)
+
 
 void init_adc(){
 
@@ -57,7 +64,8 @@ int main()
 	init_adc();
 
 
-	GPIOC->OUTDR |= (1<<0); // dir
+
+	dir_left();
 
 	uint16_t x = 50000;
 
@@ -65,13 +73,13 @@ int main()
 		uint32_t y = 200 + ((x*x)  >>5);
 		Delay_Us(y); // 200 ... 50000
 		if (x<1023-10) {
-			GPIOC->OUTDR &= ~(1<<7); // enable driver
-			GPIOC->OUTDR |= (1<<1); // step high
+			driver_on();
+			step_high();
 		} else {
-			GPIOC->OUTDR |= (1<<7); // disable driver
+			driver_off();
 		}
 		x = read_adc();
 		Delay_Us(1);
-		GPIOC->OUTDR &= ~(1<<1); // step low
+		step_low();
 	}
 }
