@@ -6,12 +6,12 @@
 // ADC  D4 (A7)
 // Joystick on A1 and A2
 
-#define dir_left()   GPIOC->OUTDR |=  (1<<0)
-#define dir_right()  GPIOC->OUTDR &= ~(1<<0)
-#define driver_on()  GPIOC->OUTDR &= ~(1<<7)
-#define driver_off() GPIOC->OUTDR |=  (1<<7)
-#define step_high()  GPIOC->OUTDR |=  (1<<1)
-#define step_low()   GPIOC->OUTDR &= ~(1<<1)
+#define dir_left()   GPIOC->BSHR = GPIO_BSHR_BS0
+#define dir_right()  GPIOC->BSHR = GPIO_BSHR_BR0
+#define driver_on()  GPIOC->BSHR = GPIO_BSHR_BR7
+#define driver_off() GPIOC->BSHR = GPIO_BSHR_BS7
+#define step_high()  GPIOC->BSHR = GPIO_BSHR_BS1
+#define step_low()   GPIOC->BSHR = GPIO_BSHR_BR1
 #define joystick_left()  (!(GPIOA->INDR & (1<<1)))
 #define joystick_right() (!(GPIOA->INDR & (1<<2)))
 
@@ -74,7 +74,6 @@ int main()
 	GPIOA->CFGLR &= ~((0xf<<(4*1)) | (0xf<<(4*2)));
 	GPIOA->CFGLR |= (GPIO_CNF_IN_PUPD)<<(4*1) | (GPIO_CNF_IN_PUPD)<<(4*2);
 	GPIOA->OUTDR |= (1<<1)|(1<<2);
-//	GPIOA->BSHR = GPIO_BSHR_BS1 | GPIO_BSHR_BS2;
 
 	init_adc();
 	dir_right();
