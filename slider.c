@@ -54,9 +54,7 @@ uint16_t read_adc(void){
 enum {
 	IDLE = 0,
 	MOVE,
-	FAST_MOVE,
-	JOYSTICK_TAP_LEFT,
-	JOYSTICK_TAP_RIGHT
+	FAST_MOVE
 };
 int state = IDLE;
 
@@ -86,27 +84,23 @@ int main()
 	while(1) switch (state) {
 	case IDLE:
 		driver_off();
-		if (joystick_left()) state = JOYSTICK_TAP_LEFT;
-		else if (joystick_right()) state = JOYSTICK_TAP_RIGHT;
-	break;
-
-	case JOYSTICK_TAP_LEFT:
-		dir_left();
-		debounce();
-		if (joystick_left()) state = FAST_MOVE;
-		else state = MOVE;
-	break;
-
-	case JOYSTICK_TAP_RIGHT:
-		dir_right();
-		debounce();
-		if (joystick_right()) state = FAST_MOVE;
-		else state = MOVE;
+		if (joystick_left()) {
+			dir_left();
+			driver_on();
+			debounce();
+			if (joystick_left()) state = FAST_MOVE;
+			else state = MOVE;
+		} else if (joystick_right()) {
+			dir_right();
+			driver_on();
+			debounce();
+			if (joystick_right()) state = FAST_MOVE;
+			else state = MOVE;
+		}
 	break;
 
 	case FAST_MOVE:
 		if (joystick_left() || joystick_right()) {
-			driver_on();
 			step_high();
 			Delay_Us(2);
 			step_low();
@@ -120,7 +114,6 @@ int main()
 			state = IDLE;
 			debounce();
 		} else {
-			driver_on();
 			step_high();
 			Delay_Us(2);
 			step_low();
