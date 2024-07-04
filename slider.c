@@ -80,11 +80,13 @@ int main()
 	GPIOA->CFGLR |= (GPIO_CNF_IN_PUPD)<<(4*1) | (GPIO_CNF_IN_PUPD)<<(4*2);
 	GPIOA->OUTDR |= (1<<1)|(1<<2);
 
+	driver_off();
 	init_adc();
+
+	int idle_count = 0;
 
 	while(1) switch (state) {
 	case IDLE:
-		driver_off();
 		if (joystick_left()) {
 			dir_left();
 			driver_on();
@@ -98,18 +100,27 @@ int main()
 			if (joystick_right()) state = FAST_MOVE;
 			else state = MOVE;
 		}
+		Delay_Us(500);
+		if (++idle_count > 2000) {
+			driver_off();
+			idle_count=0;
+		}
 	break;
 
 	case FAST_MOVE:
 		if (joystick_left() || joystick_right()) {
 			pulse_step();
 			Delay_Us(200);
-		} else state = IDLE;
+		} else {
+			idle_count=0;
+			state = IDLE;
+		}
 	break;
 
 	case MOVE:
 		uint16_t adc = 1023 - read_adc();
 		if (joystick_left() || joystick_right()) {
+			idle_count=0;
 			state = IDLE;
 			debounce();
 		} else {
