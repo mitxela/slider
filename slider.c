@@ -55,8 +55,8 @@ enum {
 	IDLE = 0,
 	MOVE,
 	FAST_MOVE,
-	JOYSTICK_TAP,
-	JOYSTICK_HELD
+	JOYSTICK_TAP_LEFT,
+	JOYSTICK_TAP_RIGHT
 };
 int state = IDLE;
 
@@ -79,23 +79,54 @@ int main()
 	dir_right();
 
 
+#define debounce() Delay_Ms(200)
 
 	uint16_t adc = 0;
 
-	while(1) {
-		if (joystick_left()) dir_left();
-		else if (joystick_right()) dir_right();
+	while(1) switch (state) {
+	case IDLE:
+		driver_off();
+		if (joystick_left()) state = JOYSTICK_TAP_LEFT;
+		else if (joystick_right()) state = JOYSTICK_TAP_RIGHT;
+	break;
 
-		uint32_t y = 200 + ((adc*adc)  >>5);
-		Delay_Us(y); // 200 ... 50000
-		if (adc<1023-10) {
+	case JOYSTICK_TAP_LEFT:
+		dir_left();
+		debounce();
+		if (joystick_left()) state = FAST_MOVE;
+		else state = MOVE;
+	break;
+
+	case JOYSTICK_TAP_RIGHT:
+		dir_right();
+		debounce();
+		if (joystick_right()) state = FAST_MOVE;
+		else state = MOVE;
+	break;
+
+	case FAST_MOVE:
+		if (joystick_left() || joystick_right()) {
 			driver_on();
 			step_high();
-		} else {
-			driver_off();
-		}
+			Delay_Us(2);
+			step_low();
+			Delay_Us(200);
+		} else state = IDLE;
+	break;
+
+	case MOVE:
 		adc = read_adc();
-		Delay_Us(1);
-		step_low();
+		if (adc>1023-10 || joystick_left() || joystick_right()) {
+			state = IDLE;
+			debounce();
+		} else {
+			driver_on();
+			step_high();
+			Delay_Us(2);
+			step_low();
+			Delay_Us( 200 + ((adc*adc)>>5) );
+		}
+	break;
+
 	}
 }
