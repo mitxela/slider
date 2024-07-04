@@ -15,6 +15,13 @@
 #define joystick_left()  (!(GPIOA->INDR & (1<<1)))
 #define joystick_right() (!(GPIOA->INDR & (1<<2)))
 
+#define debounce() Delay_Ms(200)
+
+#define pulse_step() \
+	step_high(); \
+	Delay_Us(2); \
+	step_low();
+
 void init_adc(){
 
 	RCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_ADC1;
@@ -74,12 +81,6 @@ int main()
 	GPIOA->OUTDR |= (1<<1)|(1<<2);
 
 	init_adc();
-	dir_right();
-
-
-#define debounce() Delay_Ms(200)
-
-	uint16_t adc = 0;
 
 	while(1) switch (state) {
 	case IDLE:
@@ -101,22 +102,18 @@ int main()
 
 	case FAST_MOVE:
 		if (joystick_left() || joystick_right()) {
-			step_high();
-			Delay_Us(2);
-			step_low();
+			pulse_step();
 			Delay_Us(200);
 		} else state = IDLE;
 	break;
 
 	case MOVE:
-		adc = read_adc();
-		if (adc>1023-10 || joystick_left() || joystick_right()) {
+		uint16_t adc = 1023 - read_adc();
+		if (joystick_left() || joystick_right()) {
 			state = IDLE;
 			debounce();
 		} else {
-			step_high();
-			Delay_Us(2);
-			step_low();
+			pulse_step();
 			Delay_Us( 200 + ((adc*adc)>>5) );
 		}
 	break;
