@@ -17,13 +17,16 @@
 
 #define debounce() Delay_Ms(200)
 
-#define pulse_step() \
+#define pulse_step(x) \
 	step_high(); \
 	Delay_Us(2); \
-	step_low();
+	step_low(); \
+	Delay_Us(x)
 
-void init_adc(){
+#define RAMP_MAX 350
 
+void init_adc()
+{
 	RCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_ADC1;
 
 	// PD4 is analog input chl 7
@@ -48,11 +51,10 @@ void init_adc(){
 	// calibrate
 	ADC1->CTLR2 |= ADC_CAL;
 	while(ADC1->CTLR2 & ADC_CAL);
-
 }
 
-
-uint16_t read_adc(void){
+uint16_t read_adc(void)
+{
 	ADC1->CTLR2 |= ADC_SWSTART;
 	while(!(ADC1->STATR & ADC_EOC));
 	return ADC1->RDATAR;
@@ -81,7 +83,6 @@ int main()
 	GPIOA->OUTDR |= (1<<1)|(1<<2);
 
 	init_adc();
-	#define RAMP_MAX 350
 	int ramp = RAMP_MAX;
 
 	while(1) switch (state) {
@@ -104,14 +105,12 @@ int main()
 
 	case FAST_MOVE:
 		if (joystick_left() || joystick_right()) {
-			pulse_step();
-			Delay_Us(200 + ramp);
-			if (ramp > 0) ramp -= 1;
+			pulse_step(200 + ramp);
+			if (ramp > 0) ramp--;
 		} else {
 			while (ramp < RAMP_MAX) {
-				pulse_step();
-				Delay_Us(200 + ramp);
-				ramp += 1;
+				pulse_step(200 + ramp);
+				ramp++;
 			}
 			state = IDLE;
 		}
@@ -123,8 +122,7 @@ int main()
 			state = IDLE;
 			debounce();
 		} else {
-			pulse_step();
-			Delay_Us( 200 + ((adc*adc)>>5) );
+			pulse_step( 200 + ((adc*adc)>>5) );
 		}
 	break;
 
