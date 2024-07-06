@@ -81,6 +81,8 @@ int main()
 	GPIOA->OUTDR |= (1<<1)|(1<<2);
 
 	init_adc();
+	#define RAMP_MAX 350
+	int ramp = RAMP_MAX;
 
 	while(1) switch (state) {
 	case IDLE:
@@ -103,8 +105,16 @@ int main()
 	case FAST_MOVE:
 		if (joystick_left() || joystick_right()) {
 			pulse_step();
-			Delay_Us(200);
-		} else state = IDLE;
+			Delay_Us(200 + ramp);
+			if (ramp > 0) ramp -= 1;
+		} else {
+			while (ramp < RAMP_MAX) {
+				pulse_step();
+				Delay_Us(200 + ramp);
+				ramp += 1;
+			}
+			state = IDLE;
+		}
 	break;
 
 	case MOVE:
